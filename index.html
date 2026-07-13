@@ -233,6 +233,24 @@
 
   <!-- PIVOT -->
   <div class="section" id="section-pivot">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">
+        Ventas por Semana — Desglose por Marca
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="metric-toggle" style="font-size:11px">
+            <button id="pivotChartStacked" class="active" onclick="setPivotChartMode('stacked')" style="padding:4px 10px;font-size:11px">Apilado</button>
+            <button id="pivotChartGrouped" onclick="setPivotChartMode('grouped')" style="padding:4px 10px;font-size:11px">Agrupado</button>
+            <button id="pivotChartLine" onclick="setPivotChartMode('line')" style="padding:4px 10px;font-size:11px">Línea</button>
+          </div>
+          <select id="pivotYearChart" onchange="document.getElementById('pivotYear').value=this.value;buildPivotTable()" style="font-size:12px">
+            <option value="all">Todos los años</option>
+            <option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
+          </select>
+        </div>
+      </div>
+      <div class="legend" id="pivotLegend"></div>
+      <canvas id="chartPivot" style="max-height:380px"></canvas>
+    </div>
     <div class="card">
       <div class="card-title">
         Pivot: Marca × Semana
@@ -556,10 +574,71 @@ function buildWeekly() {
   }).join('');
 }
 
+// ── PIVOT CHART ───────────────────────────────────────────────────────────
+let pivotChartMode = 'stacked';
+function setPivotChartMode(mode) {
+  pivotChartMode = mode;
+  ['stacked','grouped','line'].forEach(m => {
+    document.getElementById('pivotChart' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('active', m === mode);
+  });
+  buildPivotTable();
+}
+
+function buildPivotChart(wkArr, sortedBrands, data, met) {
+  const isLine = pivotChartMode === 'line';
+  const isStacked = pivotChartMode === 'stacked';
+  const datasets = sortedBrands.map((b, i) => {
+    const color = BRAND_COLORS[BRANDS.indexOf(b) % BRAND_COLORS.length];
+    return {
+      label: b,
+      data: wkArr.map(w => data[b]?.[w] || 0),
+      backgroundColor: isLine ? color + '22' : color + (isStacked ? 'cc' : 'bb'),
+      borderColor: color,
+      borderWidth: isLine ? 2 : 1,
+      borderRadius: isLine ? 0 : 3,
+      tension: 0.3,
+      fill: isLine ? false : undefined,
+      pointRadius: isLine ? 2 : undefined,
+      stack: isStacked ? 'stack' : undefined,
+    };
+  });
+  makeChart('chartPivot', {
+    type: isLine ? 'line' : 'bar',
+    data: { labels: wkArr.map(w => 'S' + w), datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { stacked: isStacked, grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 9 }, maxTicksLimit: 28 } },
+        y: { stacked: isStacked, grid: { color: gridColor }, ticks: { color: tickColor, font: baseFont, callback: v => met === 'Ventas' ? fmtK(v) : fmtNum(v) } }
+      }
+    }
+  });
+  // Legend
+  const legendEl = document.getElementById('pivotLegend');
+  legendEl.innerHTML = sortedBrands.map((b, i) => {
+    const color = BRAND_COLORS[BRANDS.indexOf(b) % BRAND_COLORS.length];
+    return `<div class="legend-item" id="plegs-${i}" onclick="togglePivotBrand(${i})"><div class="legend-dot" style="background:${color}"></div>${b}</div>`;
+  }).join('');
+}
+
+function togglePivotBrand(i) {
+  const chart = charts['chartPivot'];
+  if (!chart) return;
+  const meta = chart.getDatasetMeta(i);
+  meta.hidden = !meta.hidden;
+  chart.update();
+  document.getElementById('plegs-' + i)?.classList.toggle('hidden', meta.hidden);
+}
+
 // ── PIVOT ─────────────────────────────────────────────────────────────────
 function buildPivotTable() {
   const f = getFilters(); const met = currentMetric;
-  const selYear = document.getElementById('pivotYear').value;
+  // Sync both year selectors
+  const chartYearEl = document.getElementById('pivotYearChart');
+  const tableYearEl = document.getElementById('pivotYear');
+  // Use the one that changed last — keep them in sync
+  const selYear = tableYearEl.value;
   const pf = {...f, year: selYear};
   const data = {}; const weeks = new Set();
   filterData(RAW.byBrand, pf).forEach(r => {
@@ -574,6 +653,10 @@ function buildPivotTable() {
   const weekTotals = {}; wkArr.forEach(w => { weekTotals[w]=sortedBrands.reduce((s,b)=>s+(data[b]?.[w]||0),0); });
   const grandTotal = Object.values(brandTotals).reduce((a,b)=>a+b,0);
   const colMax = {}; wkArr.forEach(w => { colMax[w]=Math.max(...sortedBrands.map(b=>data[b]?.[w]||0)); });
+
+  // Sync chart year selector and build chart
+  document.getElementById('pivotYearChart').value = selYear;
+  buildPivotChart(wkArr, sortedBrands, data, met);
   let html = `<table style="font-size:11px;border-collapse:collapse;min-width:600px">
     <thead><tr style="background:#f8fafc">
       <th style="padding:7px 10px;text-align:left;color:var(--muted);position:sticky;left:0;background:#f8fafc;border-bottom:2px solid var(--border)">Marca</th>
