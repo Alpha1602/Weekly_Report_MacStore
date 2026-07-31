@@ -243,7 +243,6 @@ function buildOverview(){
 function buildBrands(){
   const f=getFilters(),met=currentMetric;
   const by={};filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{if(!by[r.Marca])by[r.Marca]={};by[r.Marca][r.Año]=(by[r.Marca][r.Año]||0)+r[met];});
-  const ds=BRANDS.map((b,i)=>({label:b,data:YEARS.map(y=>by[b]?.[y]||0),borderColor:BRAND_COLORS[i%BRAND_COLORS.length],backgroundColor:BRAND_COLORS[i%BRAND_COLORS.length]+'22',tension:0.3,pointRadius:4,fill:false}));
   const dsBar=BRANDS.map((b,i)=>({label:b,data:YEARS.map(y=>by[b]?.[y]||0),backgroundColor:BRAND_COLORS[i%BRAND_COLORS.length]+'cc',borderColor:BRAND_COLORS[i%BRAND_COLORS.length],borderWidth:1,borderRadius:4}));makeChart('chartBrandYear',{type:'bar',data:{labels:YEARS.map(y=>y==2026?y+'*':String(y)),datasets:dsBar},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
   document.getElementById('brandLegend').innerHTML=BRANDS.map((b,i)=>`<div class="legend-item" id="leg-${i}" onclick="toggleBrand(${i})"><div class="legend-dot" style="background:${BRAND_COLORS[i%BRAND_COLORS.length]}"></div>${b}</div>`).join('');
   const tot={};filterData(RAW.byBrand,f).forEach(r=>{if(!tot[r.Marca])tot[r.Marca]={v:0,u:0};tot[r.Marca].v+=r.Ventas;tot[r.Marca].u+=r.Unidades;});
@@ -253,7 +252,7 @@ function buildBrands(){
   const bwD={};filterData(RAW.byBrand,f).forEach(r=>{if(!bwD[r.Marca])bwD[r.Marca]={};bwD[r.Marca][r.Semana]=(bwD[r.Marca][r.Semana]||0)+r[met];});
   const allW=[...new Set(filterData(RAW.byBrand,f).map(r=>r.Semana))].sort((a,b)=>a-b);
   const top6=srt.slice(0,6).map(e=>e[0]);
-  makeChart('chartBrandWeek',{type:'line',data:{labels:allW.map(w=>'S'+w),datasets:top6.map((b,i)=>({label:b,data:allW.map(w=>bwD[b]?.[w]||0),borderColor:BRAND_COLORS[BRANDS.indexOf(b)%BRAND_COLORS.length],tension:0.3,pointRadius:1,fill:false,borderWidth:1.5}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:13}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
+  makeChart('chartBrandWeek',{type:'line',data:{labels:allW.map(w=>'S'+w),datasets:top6.map((b,i)=>({label:b,data:allW.map(w=>bwD[b]?.[w]||0),borderColor:BRAND_COLORS[BRANDS.indexOf(b)%BRAND_COLORS.length],tension:0.3,pointRadius:1,fill:false,borderWidth:1.5}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:{size:10},boxWidth:10,padding:8}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:13}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
 }
 function toggleBrand(i){const c=charts['chartBrandYear'];if(!c)return;const m=c.getDatasetMeta(i);m.hidden=!m.hidden;c.update();document.getElementById('leg-'+i).classList.toggle('hidden',m.hidden);}
 
@@ -318,7 +317,6 @@ function buildYoY(){
   const bW={},cW={};
   filterData(RAW.byBrand,fB).forEach(r=>{if(r.Semana<=wTo)bW[r.Semana]=(bW[r.Semana]||0)+r[met];});
   filterData(RAW.byBrand,fC).forEach(r=>{cW[r.Semana]=(cW[r.Semana]||0)+r[met];});
-  Chart.register(ChartDataLabels);
   makeChart('chartYoY',{type:'bar',data:{labels:wks.map(w=>'S'+w),datasets:[{label:String(baseY),data:wks.map(w=>bW[w]||0),backgroundColor:'rgba(59,130,246,0.55)',borderColor:'#3b82f6',borderWidth:1,borderRadius:3,datalabels:{display:false}},{label:compY===2026?'2026*':String(compY),data:wks.map(w=>cW[w]||0),backgroundColor:wks.map(w=>{const b=bW[w]||0,c=cW[w]||0;return b&&(c-b)/b>=0?'rgba(22,163,74,0.55)':'rgba(220,38,38,0.55)';}),borderColor:wks.map(w=>{const b=bW[w]||0,c=cW[w]||0;return b&&(c-b)/b>=0?'#16a34a':'#dc2626';}),borderWidth:1,borderRadius:3,datalabels:{display:true,formatter:(v,ctx)=>{const b=bW[wks[ctx.dataIndex]]||0;if(!b)return '';const p=(v-b)/b*100;return(p>=0?'+':'')+p.toFixed(1)+'%';},color:(ctx)=>{const b=bW[wks[ctx.dataIndex]]||0,v=ctx.dataset.data[ctx.dataIndex];return(!b||v>=b)?'#15803d':'#b91c1c';},font:{size:8,weight:'bold'},anchor:'end',align:'top',offset:2}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:30}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
   const bBr={},cBr={};
   filterData(RAW.byBrand,fB).forEach(r=>{if(r.Semana<=wTo)bBr[r.Marca]=(bBr[r.Marca]||0)+r[met];});
@@ -327,10 +325,10 @@ function buildYoY(){
   const bRows=[...allBr].map(b=>({marca:b,base:bBr[b]||0,comp:cBr[b]||0,delta:bBr[b]?((cBr[b]||0)-(bBr[b]||0))/(bBr[b]||1)*100:null,dAbs:(cBr[b]||0)-(bBr[b]||0)})).sort((a,b)=>b.comp-a.comp);
   document.querySelector('#yoyBrandTable tbody').innerHTML=bRows.map(r=>{const dt=r.delta===null?'—':`<span class="${r.delta>=0?'delta-pos':'delta-neg'}">${r.delta>=0?'+':''}${r.delta.toFixed(1)}%</span>`;const da=`<span class="${r.dAbs>=0?'delta-pos':'delta-neg'}">${r.dAbs>=0?'+':''}${fmtK(r.dAbs)}</span>`;return`<tr><td><strong>${r.marca}</strong></td><td class="num">${fmtK(r.base)}</td><td class="num">${fmtK(r.comp)}</td><td class="num">${dt}</td><td class="num">${da}</td></tr>`;}).join('');
   const dS=wks.map(w=>{const b=bW[w]||0,c=cW[w]||0;return b?(c-b)/b*100:null;});
-  makeChart('chartYoYWeek',{type:'line',data:{labels:wks.map(w=>'S'+w),datasets:[{label:'Δ% vs '+baseY,data:dS,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.07)',fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:dS.map(v=>v===null?'#7c3aed':v>=0?'#16a34a':'#dc2626'),segment:{borderColor:ctx=>{const v=ctx.p1.parsed.y;return v>=0?'#16a34a':'#dc2626';}}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:15}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>v+'%'}}}}});
+  makeChart('chartYoYWeek',{type:'line',data:{labels:wks.map(w=>'S'+w),datasets:[{label:'Δ% vs '+baseY,data:dS,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.07)',fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:dS.map(v=>v===null?'#7c3aed':v>=0?'#16a34a':'#dc2626'),segment:{borderColor:ctx=>{const v=ctx.p1.parsed.y;return v>=0?'#16a34a':'#dc2626';}}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:15}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>v+'%'}}}}});
   let cB=0,cC=0;const cBa=[],cCa=[];
   wks.forEach(w=>{cB+=(bW[w]||0);cC+=(cW[w]||0);cBa.push(cB);cCa.push(cC);});
-  makeChart('chartYoYCumulative',{type:'line',data:{labels:wks.map(w=>'S'+w),datasets:[{label:String(baseY),data:cBa,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.07)',fill:true,tension:0.3,pointRadius:0},{label:compY===2026?'2026*':String(compY),data:cCa,borderColor:'#d97706',backgroundColor:'rgba(217,119,6,0.07)',fill:true,tension:0.3,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:15}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
+  makeChart('chartYoYCumulative',{type:'line',data:{labels:wks.map(w=>'S'+w),datasets:[{label:String(baseY),data:cBa,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.07)',fill:true,tension:0.3,pointRadius:0},{label:compY===2026?'2026*':String(compY),data:cCa,borderColor:'#d97706',backgroundColor:'rgba(217,119,6,0.07)',fill:true,tension:0.3,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:15}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
 }
 
 function sortTable(id,col){
@@ -340,7 +338,9 @@ function sortTable(id,col){
   rows.forEach(r=>tbody.appendChild(r));
 }
 
-Chart.defaults.plugins.datalabels={display:false};
+// Register datalabels plugin once at startup
+Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', {display:false});
 document.addEventListener('DOMContentLoaded',()=>{applyFilters();});
 </script>
 </body>
