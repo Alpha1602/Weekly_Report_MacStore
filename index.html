@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MacStore — Dashboard de Ventas</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <style>
 :root{--bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--accent:#2563eb;--green:#16a34a;--red:#dc2626;--gold:#d97706;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -121,7 +122,16 @@ tr:hover td{background:#f8faff;}
 
 <!-- SEMANAL -->
 <div class="section" id="section-weekly">
-  <div class="card"><div class="card-title">Comparativo Semana × Año</div><canvas id="chartWeekDetail" style="max-height:340px"></canvas></div>
+  <div class="card">
+    <div class="card-title">Comparativo Semana × Año
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:11px;color:var(--muted);font-weight:400">Año 1</span><select id="weekYear1" onchange="buildWeekly()" style="font-size:12px;min-width:80px"><option value="all">Todos</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025" selected>2025</option><option value="2026">2026</option></select></div>
+        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:11px;color:var(--muted);font-weight:400">Año 2</span><select id="weekYear2" onchange="buildWeekly()" style="font-size:12px;min-width:80px"><option value="none">—</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select></div>
+        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:11px;color:var(--muted);font-weight:400">Año 3</span><select id="weekYear3" onchange="buildWeekly()" style="font-size:12px;min-width:80px"><option value="none" selected>—</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select></div>
+      </div>
+    </div>
+    <canvas id="chartWeekDetail" style="max-height:340px"></canvas>
+  </div>
   <div class="grid-2">
     <div class="card"><div class="card-title">Heatmap Semanal <span>hover para ver valor</span></div><div id="heatmap"></div></div>
     <div class="card"><div class="card-title">Detalle por Semana</div>
@@ -217,7 +227,7 @@ function buildOverview(){
   const f=getFilters(),met=currentMetric;
   const byYear={};filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{byYear[r.Año]=(byYear[r.Año]||0)+r[met];});
   const yrL=Object.keys(byYear).sort();
-  makeChart('chartYear',{type:'bar',data:{labels:yrL.map(y=>y==2026?y+'*':y),datasets:[{label:met,data:yrL.map(y=>byYear[y]),backgroundColor:yrL.map((y,i)=>i===yrL.length-1?'#f59e0b':'#3b82f6'),borderRadius:6}]},options:chartOpts(met==='Ventas')});
+  const yrColors=['#3b82f6','#6366f1','#16a34a','#f59e0b','#ef4444'];makeChart('chartYear',{type:'bar',data:{labels:yrL.map(y=>y==2026?y+'*':y),datasets:[{label:met,data:yrL.map(y=>byYear[y]),backgroundColor:yrL.map((y,i)=>yrColors[i%yrColors.length]),borderRadius:6}]},options:{...chartOpts(met==='Ventas'),plugins:{legend:{display:false},datalabels:{display:false}}}});
   const byBrand={};filterData(RAW.byBrand,f).forEach(r=>{byBrand[r.Marca]=(byBrand[r.Marca]||0)+r[met];});
   const be=Object.entries(byBrand).sort((a,b)=>b[1]-a[1]).slice(0,8);
   makeChart('chartBrand',{type:'doughnut',data:{labels:be.map(e=>e[0]),datasets:[{data:be.map(e=>e[1]),backgroundColor:BRAND_COLORS.slice(0,8),borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right',labels:{color:tickColor,font:baseFont,padding:10,boxWidth:11}}},maintainAspectRatio:false}});
@@ -234,7 +244,7 @@ function buildBrands(){
   const f=getFilters(),met=currentMetric;
   const by={};filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{if(!by[r.Marca])by[r.Marca]={};by[r.Marca][r.Año]=(by[r.Marca][r.Año]||0)+r[met];});
   const ds=BRANDS.map((b,i)=>({label:b,data:YEARS.map(y=>by[b]?.[y]||0),borderColor:BRAND_COLORS[i%BRAND_COLORS.length],backgroundColor:BRAND_COLORS[i%BRAND_COLORS.length]+'22',tension:0.3,pointRadius:4,fill:false}));
-  makeChart('chartBrandYear',{type:'line',data:{labels:YEARS.map(y=>y==2026?y+'*':String(y)),datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
+  const dsBar=BRANDS.map((b,i)=>({label:b,data:YEARS.map(y=>by[b]?.[y]||0),backgroundColor:BRAND_COLORS[i%BRAND_COLORS.length]+'cc',borderColor:BRAND_COLORS[i%BRAND_COLORS.length],borderWidth:1,borderRadius:4}));makeChart('chartBrandYear',{type:'bar',data:{labels:YEARS.map(y=>y==2026?y+'*':String(y)),datasets:dsBar},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
   document.getElementById('brandLegend').innerHTML=BRANDS.map((b,i)=>`<div class="legend-item" id="leg-${i}" onclick="toggleBrand(${i})"><div class="legend-dot" style="background:${BRAND_COLORS[i%BRAND_COLORS.length]}"></div>${b}</div>`).join('');
   const tot={};filterData(RAW.byBrand,f).forEach(r=>{if(!tot[r.Marca])tot[r.Marca]={v:0,u:0};tot[r.Marca].v+=r.Ventas;tot[r.Marca].u+=r.Unidades;});
   const grand=Object.values(tot).reduce((a,r)=>a+r.v,0);
@@ -251,9 +261,10 @@ function buildWeekly(){
   const f=getFilters(),met=currentMetric;
   const yw={};filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{if(!yw[r.Año])yw[r.Año]={};yw[r.Año][r.Semana]=(yw[r.Año][r.Semana]||0)+r[met];});
   const wR=Array.from({length:f.weekTo-f.weekFrom+1},(_,i)=>f.weekFrom+i);
-  const yC=['#3b82f6','#22c55e','#f59e0b','#ef4444','#a855f7'];
-  const fY=f.year!=='all'?[parseInt(f.year)]:YEARS;
-  makeChart('chartWeekDetail',{type:'line',data:{labels:wR.map(w=>'Sem '+w),datasets:fY.map((y,i)=>({label:y==2026?'2026*':String(y),data:wR.map(w=>yw[y]?.[w]||null),borderColor:yC[i%yC.length],tension:0.3,pointRadius:2,fill:false,spanGaps:true}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:26}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
+  const yC=['#3b82f6','#f59e0b','#ef4444','#16a34a','#a855f7'];
+  const wy1=document.getElementById('weekYear1')?.value||'all',wy2=document.getElementById('weekYear2')?.value||'none',wy3=document.getElementById('weekYear3')?.value||'none';
+  const selYears=wy1==='all'?YEARS:[wy1,wy2,wy3].filter(y=>y!=='none').map(Number);
+  makeChart('chartWeekDetail',{type:'line',data:{labels:wR.map(w=>'Sem '+w),datasets:selYears.map((y,i)=>({label:y==2026?'2026*':String(y),data:wR.map(w=>yw[y]?.[w]||null),borderColor:yC[i%yC.length],tension:0.3,pointRadius:2,fill:false,spanGaps:true,borderWidth:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:26}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
   const hD={};filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{const k=r.Año+'-'+String(r.Semana).padStart(2,'0');hD[k]=(hD[k]||0)+r[met];});
   const mx=Math.max(...Object.values(hD));
   const fY2=f.year!=='all'?[parseInt(f.year)]:YEARS;
@@ -307,7 +318,8 @@ function buildYoY(){
   const bW={},cW={};
   filterData(RAW.byBrand,fB).forEach(r=>{if(r.Semana<=wTo)bW[r.Semana]=(bW[r.Semana]||0)+r[met];});
   filterData(RAW.byBrand,fC).forEach(r=>{cW[r.Semana]=(cW[r.Semana]||0)+r[met];});
-  makeChart('chartYoY',{type:'bar',data:{labels:wks.map(w=>'S'+w),datasets:[{label:String(baseY),data:wks.map(w=>bW[w]||0),backgroundColor:'rgba(59,130,246,0.55)',borderColor:'#3b82f6',borderWidth:1,borderRadius:3},{label:compY===2026?'2026*':String(compY),data:wks.map(w=>cW[w]||0),backgroundColor:'rgba(234,179,8,0.6)',borderColor:'#d97706',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:30}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
+  Chart.register(ChartDataLabels);
+  makeChart('chartYoY',{type:'bar',data:{labels:wks.map(w=>'S'+w),datasets:[{label:String(baseY),data:wks.map(w=>bW[w]||0),backgroundColor:'rgba(59,130,246,0.55)',borderColor:'#3b82f6',borderWidth:1,borderRadius:3,datalabels:{display:false}},{label:compY===2026?'2026*':String(compY),data:wks.map(w=>cW[w]||0),backgroundColor:wks.map(w=>{const b=bW[w]||0,c=cW[w]||0;return b&&(c-b)/b>=0?'rgba(22,163,74,0.55)':'rgba(220,38,38,0.55)';}),borderColor:wks.map(w=>{const b=bW[w]||0,c=cW[w]||0;return b&&(c-b)/b>=0?'#16a34a':'#dc2626';}),borderWidth:1,borderRadius:3,datalabels:{display:true,formatter:(v,ctx)=>{const b=bW[wks[ctx.dataIndex]]||0;if(!b)return '';const p=(v-b)/b*100;return(p>=0?'+':'')+p.toFixed(1)+'%';},color:(ctx)=>{const b=bW[wks[ctx.dataIndex]]||0,v=ctx.dataset.data[ctx.dataIndex];return(!b||v>=b)?'#15803d':'#b91c1c';},font:{size:8,weight:'bold'},anchor:'end',align:'top',offset:2}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:30}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
   const bBr={},cBr={};
   filterData(RAW.byBrand,fB).forEach(r=>{if(r.Semana<=wTo)bBr[r.Marca]=(bBr[r.Marca]||0)+r[met];});
   filterData(RAW.byBrand,fC).forEach(r=>{cBr[r.Marca]=(cBr[r.Marca]||0)+r[met];});
@@ -328,6 +340,7 @@ function sortTable(id,col){
   rows.forEach(r=>tbody.appendChild(r));
 }
 
+Chart.defaults.plugins.datalabels={display:false};
 document.addEventListener('DOMContentLoaded',()=>{applyFilters();});
 </script>
 </body>
