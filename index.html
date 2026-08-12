@@ -69,9 +69,7 @@ tr:hover td{background:#f8faff;}
 <div class="tabs">
   <div class="tab active" onclick="switchTab('overview')">Resumen</div>
   <div class="tab" onclick="switchTab('brands')">Marcas</div>
-  <div class="tab" onclick="switchTab('weekly')">Semanal</div>
   <div class="tab" onclick="switchTab('pivot')">Tabla Pivot</div>
-  <div class="tab" onclick="switchTab('yoy')">YoY Comparativo</div>
   <div class="tab" onclick="switchTab('analysis')">Análisis</div>
 </div>
 <div class="filters">
@@ -103,6 +101,27 @@ tr:hover td{background:#f8faff;}
     <div class="card"><div class="card-title">Ventas por Semana</div><canvas id="chartWeek"></canvas></div>
     <div class="card"><div class="card-title">Por Categoría</div><canvas id="chartCategory"></canvas></div>
   </div>
+  <div style="border-top:2px solid var(--border);margin:8px 0 14px;padding-top:14px">
+    <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:14px">📊 Comparativo YoY</div>
+    <div class="card">
+      <div class="card-title">Comparativo Año vs Año
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="yoyBase" onchange="buildYoY()" style="font-size:12px"><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025" selected>2025</option></select>
+          <span style="color:var(--muted);font-size:12px">vs</span>
+          <select id="yoyComp" onchange="buildYoY()" style="font-size:12px"><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select>
+        </div>
+      </div>
+      <canvas id="chartYoY" style="max-height:360px"></canvas>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Δ% por Marca <span id="yoyBrandTitle"></span></div>
+        <div class="table-wrap"><table id="yoyBrandTable">
+          <thead><tr><th>Marca</th><th class="num" id="yoyColBase">Base</th><th class="num" id="yoyColComp">Comp.</th><th class="num">Δ%</th><th class="num">Δ $</th></tr></thead>
+          <tbody></tbody></table></div></div>
+      <div class="card"><div class="card-title">Sem a Sem YoY <span id="yoyWeekTitle"></span></div><canvas id="chartYoYWeek" style="max-height:300px"></canvas></div>
+    </div>
+    <div class="card"><div class="card-title">Acumulado Semanal YoY</div><canvas id="chartYoYCumulative" style="max-height:280px"></canvas></div>
+  </div>
 </div>
 
 <!-- MARCAS -->
@@ -121,36 +140,15 @@ tr:hover td{background:#f8faff;}
   </div>
 </div>
 
-<!-- SEMANAL -->
-<div class="section" id="section-weekly">
-  <div class="card">
-    <div class="card-title">Comparativo Semana × Año
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:11px;color:var(--muted);font-weight:400">Año 1</span><select id="weekYear1" onchange="buildWeekly()" style="font-size:12px;min-width:80px"><option value="all">Todos</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025" selected>2025</option><option value="2026">2026</option></select></div>
-        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:11px;color:var(--muted);font-weight:400">Año 2</span><select id="weekYear2" onchange="buildWeekly()" style="font-size:12px;min-width:80px"><option value="none">—</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select></div>
-        <div style="display:flex;align-items:center;gap:5px"><span style="font-size:11px;color:var(--muted);font-weight:400">Año 3</span><select id="weekYear3" onchange="buildWeekly()" style="font-size:12px;min-width:80px"><option value="none" selected>—</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select></div>
-      </div>
-    </div>
-    <canvas id="chartWeekDetail" style="max-height:340px"></canvas>
-  </div>
-  <div class="grid-2">
-    <div class="card"><div class="card-title">Heatmap Semanal <span>hover para ver valor</span></div><div id="heatmap"></div></div>
-    <div class="card"><div class="card-title">Detalle por Semana</div>
-      <div class="table-wrap"><table id="weekTable">
-        <thead><tr><th onclick="sortTable('weekTable',0)">Año</th><th onclick="sortTable('weekTable',1)">Semana</th><th onclick="sortTable('weekTable',2)" class="num">Ventas $</th><th onclick="sortTable('weekTable',3)" class="num">Unidades</th><th onclick="sortTable('weekTable',4)" class="num">vs Ant.</th></tr></thead>
-        <tbody></tbody></table></div></div>
-  </div>
-</div>
-
 <!-- PIVOT -->
 <div class="section" id="section-pivot">
   <div class="card">
     <div class="card-title">Ventas por Semana — Desglose por Marca
       <div style="display:flex;gap:8px;align-items:center">
         <div class="metric-toggle">
-          <button id="pivotChartStacked" class="active" onclick="setPivotChartMode('stacked')" style="padding:4px 10px;font-size:11px">Apilado</button>
+          <button id="pivotChartStacked" onclick="setPivotChartMode('stacked')" style="padding:4px 10px;font-size:11px">Apilado</button>
           <button id="pivotChartGrouped" onclick="setPivotChartMode('grouped')" style="padding:4px 10px;font-size:11px">Agrupado</button>
-          <button id="pivotChartLine" onclick="setPivotChartMode('line')" style="padding:4px 10px;font-size:11px">Línea</button>
+          <button id="pivotChartLine" class="active" onclick="setPivotChartMode('line')" style="padding:4px 10px;font-size:11px">Línea</button>
         </div>
         <select id="pivotYearChart" onchange="document.getElementById('pivotYear').value=this.value;buildPivotTable()" style="font-size:12px">
           <option value="all">Todos los años</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
@@ -160,6 +158,7 @@ tr:hover td{background:#f8faff;}
     <div class="legend" id="pivotLegend"></div>
     <canvas id="chartPivot" style="max-height:380px"></canvas>
   </div>
+  <div class="card"><div class="card-title">Heatmap Semanal <span>hover para ver valor</span></div><div id="heatmap"></div></div>
   <div class="card">
     <div class="card-title">Pivot: Marca × Semana
       <select id="pivotYear" onchange="document.getElementById('pivotYearChart').value=this.value;buildPivotTable()">
@@ -170,29 +169,6 @@ tr:hover td{background:#f8faff;}
     <p class="note">* 2026 parcial (semanas 1–32)</p>
   </div>
 </div>
-
-<!-- YOY -->
-<div class="section" id="section-yoy">
-  <div class="card">
-    <div class="card-title">Comparativo Año vs Año
-      <div style="display:flex;gap:8px;align-items:center">
-        <select id="yoyBase" onchange="buildYoY()" style="font-size:12px"><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025" selected>2025</option></select>
-        <span style="color:var(--muted);font-size:12px">vs</span>
-        <select id="yoyComp" onchange="buildYoY()" style="font-size:12px"><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select>
-      </div>
-    </div>
-    <canvas id="chartYoY" style="max-height:360px"></canvas>
-  </div>
-  <div class="grid-2">
-    <div class="card"><div class="card-title">Δ% por Marca <span id="yoyBrandTitle"></span></div>
-      <div class="table-wrap"><table id="yoyBrandTable">
-        <thead><tr><th>Marca</th><th class="num" id="yoyColBase">Base</th><th class="num" id="yoyColComp">Comp.</th><th class="num">Δ%</th><th class="num">Δ $</th></tr></thead>
-        <tbody></tbody></table></div></div>
-    <div class="card"><div class="card-title">Sem a Sem YoY <span id="yoyWeekTitle"></span></div><canvas id="chartYoYWeek" style="max-height:300px"></canvas></div>
-  </div>
-  <div class="card"><div class="card-title">Acumulado Semanal YoY</div><canvas id="chartYoYCumulative" style="max-height:280px"></canvas></div>
-</div>
-
 
 <!-- ANÁLISIS -->
 <div class="section" id="section-analysis">
@@ -237,8 +213,8 @@ function getFilters(){return{year:document.getElementById('filterYear').value,br
 function filterData(arr,f){return arr.filter(r=>{if(f.year!=='all'&&r.Año!=f.year)return false;if(f.brand!=='all'&&r.Marca&&r.Marca!==f.brand)return false;if(r.Semana<f.weekFrom||r.Semana>f.weekTo)return false;return true;});}
 function resetFilters(){document.getElementById('filterYear').value='all';document.getElementById('filterBrand').value='all';document.getElementById('filterWeekFrom').value=1;document.getElementById('filterWeekTo').value=52;applyFilters();}
 function setMetric(m){currentMetric=m;document.getElementById('btnVentas').classList.toggle('active',m==='Ventas');document.getElementById('btnUnidades').classList.toggle('active',m==='Unidades');applyFilters();}
-function applyFilters(){buildKPIs();buildOverview();buildBrands();buildWeekly();buildPivotTable();buildYoY();buildAnalysis();}
-function switchTab(id){const tabs=['overview','brands','weekly','pivot','yoy','analysis'];document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===id));document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('section-'+id).classList.add('active');}
+function applyFilters(){buildKPIs();buildOverview();buildBrands();buildPivotTable();buildHeatmap();buildYoY();buildAnalysis();}
+function switchTab(id){const tabs=['overview','brands','pivot','analysis'];document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===id));document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('section-'+id).classList.add('active');}
 
 function buildKPIs(){
   const f=getFilters(),bw=filterData(RAW.byBrand,f);
@@ -315,7 +291,7 @@ function buildWeekly(){
   document.querySelector('#weekTable tbody').innerHTML=wa.map((r,i)=>{const p=wa[i-1];let d='—';if(p&&p.año===r.año){const pct=p.v?(r.v-p.v)/p.v*100:0;d=`<span class="${pct>=0?'delta-pos':'delta-neg'}">${pct>=0?'+':''}${pct.toFixed(1)}%</span>`;}return`<tr><td>${r.año}</td><td>Sem ${r.semana}</td><td class="num">${fmtMXN(r.v)}</td><td class="num">${fmtNum(r.u)}</td><td class="num">${d}</td></tr>`;}).join('');
 }
 
-let pivotChartMode='stacked';
+let pivotChartMode='line';
 function setPivotChartMode(m){pivotChartMode=m;['Stacked','Grouped','Line'].forEach(n=>{document.getElementById('pivotChart'+n).classList.toggle('active',n.toLowerCase()===m);});buildPivotTable();}
 function buildPivotChart(wkArr,sb,data,met){
   const isLine=pivotChartMode==='line',isStacked=pivotChartMode==='stacked';
@@ -389,6 +365,19 @@ function syncFilterOptions(){
   document.querySelector('.header-badge').textContent=latestYear+' parcial sem 1–'+MAX26;
   const pivotNote=document.querySelector('#section-pivot .note');
   if(pivotNote)pivotNote.textContent='* '+latestYear+' parcial (semanas 1–'+MAX26+')';
+}
+
+function buildHeatmap(){
+  const f=getFilters(),met=currentMetric;
+  const wR=Array.from({length:f.weekTo-f.weekFrom+1},(_,i)=>f.weekFrom+i);
+  const hD={};filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{const k=r.Año+'-'+String(r.Semana).padStart(2,'0');hD[k]=(hD[k]||0)+r[met];});
+  const mx=Math.max(...Object.values(hD));
+  const fY2=f.year!=='all'?[parseInt(f.year)]:YEARS;
+  let hh='<div style="overflow-x:auto"><table style="border-collapse:separate;border-spacing:2px;font-size:9px"><tr><th style="color:var(--muted);padding:2px 6px;text-align:left;font-weight:600">Año</th>';
+  wR.forEach(w=>hh+=`<th style="color:var(--muted);padding:2px 2px;text-align:center;font-weight:400">${w}</th>`);hh+='</tr>';
+  fY2.forEach(y=>{hh+=`<tr><td style="color:var(--text);padding:2px 6px;font-weight:700">${y==2026?'2026*':y}</td>`;wR.forEach(w=>{const k=y+'-'+String(w).padStart(2,'0'),v=hD[k]||0,int=mx?v/mx:0,bg=v?`rgba(37,99,235,${(0.12+int*0.88).toFixed(2)})`:'#f1f5f9',ttl=v?(met==='Ventas'?fmtMXN(v):fmtNum(v)+' u'):'—';hh+=`<td title="${ttl}" style="background:${bg};width:16px;height:18px;border-radius:2px;cursor:default"></td>`;});hh+='</tr>';});
+  hh+='</table></div>';
+  const el=document.getElementById('heatmap');if(el)el.innerHTML=hh;
 }
 
 function buildAnalysis(){
