@@ -112,7 +112,7 @@ tr:hover td{background:#f8faff;}
     <canvas id="chartBrandYear" style="max-height:380px"></canvas>
   </div>
   <div class="grid-2">
-    <div class="card"><div class="card-title">Ranking de Marcas</div>
+    <div class="card"><div class="card-title">Ranking de Marcas<select id="brandYear" onchange="buildBrands()" style="font-size:12px;min-width:80px;margin-left:8px"><option value="all">Todos</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select></div>
       <div class="table-wrap"><table id="brandTable">
         <thead><tr><th onclick="sortTable('brandTable',0)">#</th><th onclick="sortTable('brandTable',1)">Marca</th><th onclick="sortTable('brandTable',2)" class="num">Ventas $</th><th onclick="sortTable('brandTable',3)" class="num">Unidades</th><th onclick="sortTable('brandTable',4)" class="num">% Total</th></tr></thead>
         <tbody></tbody></table></div></div>
@@ -231,9 +231,16 @@ function buildOverview(){
   const byBrand={};filterData(RAW.byBrand,f).forEach(r=>{byBrand[r.Marca]=(byBrand[r.Marca]||0)+r[met];});
   const be=Object.entries(byBrand).sort((a,b)=>b[1]-a[1]).slice(0,8);
   makeChart('chartBrand',{type:'doughnut',data:{labels:be.map(e=>e[0]),datasets:[{data:be.map(e=>e[1]),backgroundColor:BRAND_COLORS.slice(0,8),borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right',labels:{color:tickColor,font:baseFont,padding:10,boxWidth:11}}},maintainAspectRatio:false}});
-  const wkD={};filterData(RAW.byBrand,f).forEach(r=>{wkD[r.Semana]=(wkD[r.Semana]||0)+r[met];});
-  const wks=Object.keys(wkD).map(Number).sort((a,b)=>a-b);
-  makeChart('chartWeek',{type:'line',data:{labels:wks.map(w=>'S'+w),datasets:[{label:met,data:wks.map(w=>wkD[w]),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.08)',fill:true,tension:0.3,pointRadius:2}]},options:chartOpts(met==='Ventas')});
+  const yw25={},yw26={};
+  filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{
+    if(r.Año===2025){yw25[r.Semana]=(yw25[r.Semana]||0)+r[met];}
+    else if(r.Año===2026){yw26[r.Semana]=(yw26[r.Semana]||0)+r[met];}
+  });
+  const wkRange=Array.from({length:MAX26},(_,i)=>i+1);
+  makeChart('chartWeek',{type:'line',data:{labels:wkRange.map(w=>'S'+w),datasets:[
+    {label:'2025',data:wkRange.map(w=>yw25[w]||null),borderColor:'#6366f1',fill:false,tension:0.3,pointRadius:1.5,spanGaps:true,borderWidth:2},
+    {label:'2026',data:wkRange.map(w=>yw26[w]||null),borderColor:'#16a34a',fill:false,tension:0.3,pointRadius:1.5,spanGaps:true,borderWidth:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:18}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
   const byCat={};filterData(RAW.byCategory,f).forEach(r=>{byCat[r['Categoría']]=(byCat[r['Categoría']]||0)+r[met];});
   const catE=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
   const catC=['#3b82f6','#6366f1','#8b5cf6','#a855f7','#ec4899','#ef4444','#f97316','#f59e0b','#eab308','#22c55e','#10b981','#14b8a6','#06b6d4','#0ea5e9','#64748b','#94a3b8'];
@@ -245,11 +252,13 @@ function buildBrands(){
   const by={};filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{if(!by[r.Marca])by[r.Marca]={};by[r.Marca][r.Año]=(by[r.Marca][r.Año]||0)+r[met];});
   const dsBar=BRANDS.map((b,i)=>({label:b,data:YEARS.map(y=>by[b]?.[y]||0),backgroundColor:BRAND_COLORS[i%BRAND_COLORS.length]+'cc',borderColor:BRAND_COLORS[i%BRAND_COLORS.length],borderWidth:1,borderRadius:4}));makeChart('chartBrandYear',{type:'bar',data:{labels:YEARS.map(y=>y==2026?y+'*':String(y)),datasets:dsBar},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
   document.getElementById('brandLegend').innerHTML=BRANDS.map((b,i)=>`<div class="legend-item" id="leg-${i}" onclick="toggleBrand(${i})"><div class="legend-dot" style="background:${BRAND_COLORS[i%BRAND_COLORS.length]}"></div>${b}</div>`).join('');
-  const tot={};filterData(RAW.byBrand,f).forEach(r=>{if(!tot[r.Marca])tot[r.Marca]={v:0,u:0};tot[r.Marca].v+=r.Ventas;tot[r.Marca].u+=r.Unidades;});
+  const brandY=document.getElementById('brandYear')?.value||'2026';
+  const fBrands={...f,year:brandY};
+  const tot={};filterData(RAW.byBrand,fBrands).forEach(r=>{if(!tot[r.Marca])tot[r.Marca]={v:0,u:0};tot[r.Marca].v+=r.Ventas;tot[r.Marca].u+=r.Unidades;});
   const grand=Object.values(tot).reduce((a,r)=>a+r.v,0);
   const srt=Object.entries(tot).sort((a,b)=>b[1].v-a[1].v);
   document.querySelector('#brandTable tbody').innerHTML=srt.map((e,i)=>`<tr><td class="rank">#${i+1}</td><td><strong>${e[0]}</strong></td><td class="num">${fmtMXN(e[1].v)}</td><td class="num">${fmtNum(e[1].u)}</td><td class="num">${grand?(e[1].v/grand*100).toFixed(1)+'%':'—'}</td></tr>`).join('');
-  const bwD={};filterData(RAW.byBrand,f).forEach(r=>{if(!bwD[r.Marca])bwD[r.Marca]={};bwD[r.Marca][r.Semana]=(bwD[r.Marca][r.Semana]||0)+r[met];});
+  const bwD={};filterData(RAW.byBrand,fBrands).forEach(r=>{if(!bwD[r.Marca])bwD[r.Marca]={};bwD[r.Marca][r.Semana]=(bwD[r.Marca][r.Semana]||0)+r[met];});
   const allW=[...new Set(filterData(RAW.byBrand,f).map(r=>r.Semana))].sort((a,b)=>a-b);
   const top6=srt.slice(0,6).map(e=>e[0]);
   makeChart('chartBrandWeek',{type:'line',data:{labels:allW.map(w=>'S'+w),datasets:top6.map((b,i)=>({label:b,data:allW.map(w=>bwD[b]?.[w]||0),borderColor:BRAND_COLORS[BRANDS.indexOf(b)%BRAND_COLORS.length],tension:0.3,pointRadius:1,fill:false,borderWidth:1.5}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:{size:10},boxWidth:10,padding:8}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:13}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
