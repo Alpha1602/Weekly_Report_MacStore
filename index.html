@@ -166,29 +166,27 @@ tr:hover td{background:#f8faff;}
 
 <!-- ANÁLISIS -->
 <div class="section" id="section-analysis">
+  <div class="card">
+    <div class="card-title">Ticket Promedio por Marca <span>Ventas $ ÷ Unidades vendidas</span></div>
+    <canvas id="chartTicket" style="max-height:280px"></canvas>
+  </div>
+  <div class="card" style="overflow:hidden">
+    <div class="card-title">Ventas por Región <span>todas las regiones</span></div>
+    <canvas id="chartRegion" style="max-height:320px"></canvas>
+  </div>
   <div class="grid-2">
-    <div class="card" style="overflow:hidden">
-      <div class="card-title">Ventas por Región <span>todas las regiones</span></div>
-      <canvas id="chartRegion" style="max-height:420px"></canvas>
-    </div>
     <div class="card"><div class="card-title">Ranking por Región</div>
       <div class="table-wrap"><table id="regionTable">
         <thead><tr><th onclick="sortTable('regionTable',0)">#</th><th onclick="sortTable('regionTable',1)">Región</th><th onclick="sortTable('regionTable',2)" class="num">Ventas $</th><th onclick="sortTable('regionTable',3)" class="num">Unidades</th><th onclick="sortTable('regionTable',4)" class="num">% Total</th></tr></thead>
         <tbody></tbody></table></div></div>
-  </div>
-  <div class="grid-2">
-    <div class="card" style="overflow:hidden">
-      <div class="card-title">Ventas por Sub Categoría <span>top 15</span></div>
-      <canvas id="chartSubCat" style="max-height:380px"></canvas>
-    </div>
     <div class="card"><div class="card-title">Ranking Sub Categorías</div>
       <div class="table-wrap"><table id="subCatTable">
         <thead><tr><th onclick="sortTable('subCatTable',0)">#</th><th onclick="sortTable('subCatTable',1)">Sub Categoría</th><th onclick="sortTable('subCatTable',2)" class="num">Ventas $</th><th onclick="sortTable('subCatTable',3)" class="num">Unidades</th><th onclick="sortTable('subCatTable',4)" class="num">% Total</th></tr></thead>
         <tbody></tbody></table></div></div>
   </div>
-  <div class="card">
-    <div class="card-title">Ticket Promedio por Marca <span>Ventas $ ÷ Unidades vendidas</span></div>
-    <canvas id="chartTicket" style="max-height:280px"></canvas>
+  <div class="card" style="overflow:hidden">
+    <div class="card-title">Ventas por Sub Categoría <span>top 15</span></div>
+    <canvas id="chartSubCat" style="max-height:380px"></canvas>
   </div>
 </div>
 
