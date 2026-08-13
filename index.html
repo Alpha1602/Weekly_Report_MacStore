@@ -393,15 +393,16 @@ function buildAnalysis(){
   });
   const regSorted=Object.entries(regD).sort((a,b)=>b[1][met==='Ventas'?'v':'u']-a[1][met==='Ventas'?'v':'u']);
   const regGrand=regSorted.reduce((a,e)=>a+e[1].v,0);
-  const regPalette=regSorted.map((_,i)=>`hsl(${210+i*7},${65-i}%,${48+i}%)`);
-  makeChart('chartRegion',{type:'bar',data:{
+  const regPalette=regSorted.map((_,i)=>`hsl(${210+i*30},65%,${52+i*2}%)`);
+  makeChart('chartRegion',{type:'doughnut',data:{
     labels:regSorted.map(e=>e[0]),
     datasets:[{data:regSorted.map(e=>met==='Ventas'?e[1].v:e[1].u),
-      backgroundColor:regPalette,borderRadius:4}]
-  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},datalabels:{display:false}},
-    scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}},
-            y:{grid:{display:false},ticks:{color:tickColor,font:{size:10}}}}}});
+      backgroundColor:regPalette,borderWidth:2,borderColor:'var(--bg)'}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+    plugins:{legend:{display:true,position:'bottom',labels:{color:tickColor,font:{size:9},boxWidth:10,padding:8,
+      formatter:(v,ctx)=>{const pct=(regGrand?ctx.dataset.data[ctx.dataIndex]/regGrand*100:0).toFixed(1);return ctx.chart.data.labels[ctx.dataIndex]+' '+pct+'%';}}},
+      datalabels:{display:false},
+      tooltip:{callbacks:{label:ctx=>met==='Ventas'?fmtMXN(ctx.raw):fmtNum(ctx.raw)+' u'}}}}});
   document.querySelector('#regionTable tbody').innerHTML=regSorted.map((e,i)=>
     `<tr><td class="rank">#${i+1}</td><td><strong>${e[0]}</strong></td>
      <td class="num">${fmtMXN(e[1].v)}</td><td class="num">${fmtNum(e[1].u)}</td>
