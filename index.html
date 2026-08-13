@@ -319,10 +319,10 @@ function buildYoY(){
   const f=getFilters(),met=currentMetric;
   const baseY=parseInt(document.getElementById('yoyBase').value),compY=parseInt(document.getElementById('yoyComp').value);
   const maxW=compY===2026?MAX26:52,wTo=Math.min(f.weekTo,maxW);
-  document.getElementById('yoyBrandTitle').textContent=baseY+' vs '+compY;
-  document.getElementById('yoyWeekTitle').textContent=baseY+' vs '+compY;
-  document.getElementById('yoyColBase').textContent=baseY;
-  document.getElementById('yoyColComp').textContent=compY;
+  const _ybt=document.getElementById('yoyBrandTitle');if(_ybt)_ybt.textContent=baseY+' vs '+compY;
+  const _ywt=document.getElementById('yoyWeekTitle');if(_ywt)_ywt.textContent=baseY+' vs '+compY;
+  const _ycb=document.getElementById('yoyColBase');if(_ycb)_ycb.textContent=baseY;
+  const _ycc=document.getElementById('yoyColComp');if(_ycc)_ycc.textContent=compY;
   const fB={...f,year:String(baseY),weekTo:Math.min(f.weekTo,52)},fC={...f,year:String(compY),weekTo:wTo};
   const wks=Array.from({length:wTo-f.weekFrom+1},(_,i)=>f.weekFrom+i);
   const bW={},cW={};
@@ -366,10 +366,10 @@ function syncFilterOptions(){
 function buildHeatmap(){
   const f=getFilters(),met=currentMetric;
   const hD={};filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{const k=r.Año+'-'+String(r.Semana).padStart(2,'0');hD[k]=(hD[k]||0)+r[met];});
-  // Only show weeks that have actual data to avoid blank space
-  const dataWeeks=new Set(filterData(RAW.byBrand,{...f,year:'all'}).map(r=>r.Semana));
-  const wMax=dataWeeks.size?Math.min(f.weekTo,Math.max(...dataWeeks)):f.weekTo;
-  const wR=Array.from({length:Math.min(wMax,f.weekTo)-f.weekFrom+1},(_,i)=>f.weekFrom+i).filter(w=>dataWeeks.has(w));
+  // Cap at MAX26 so 2026* doesn't show blank columns for weeks 33-52
+  const latestY=f.year!=='all'?parseInt(f.year):Math.max(...YEARS);
+  const wCap=latestY>=2026?MAX26:f.weekTo;
+  const wR=Array.from({length:Math.min(wCap,f.weekTo)-f.weekFrom+1},(_,i)=>f.weekFrom+i);
   const mx=Math.max(...Object.values(hD));
   const fY2=f.year!=='all'?[parseInt(f.year)]:YEARS;
   let hh='<div style="overflow-x:auto"><table style="border-collapse:separate;border-spacing:2px;font-size:9px"><tr><th style="color:var(--muted);padding:2px 6px;text-align:left;font-weight:600">Año</th>';
