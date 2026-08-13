@@ -416,15 +416,16 @@ function buildAnalysis(){
   });
   const scSorted=Object.entries(scD).sort((a,b)=>b[1][met==='Ventas'?'v':'u']-a[1][met==='Ventas'?'v':'u']);
   const scGrand=scSorted.reduce((a,e)=>a+e[1].v,0);
-  const sc15=scSorted.slice(0,15);
-  makeChart('chartSubCat',{type:'bar',data:{
-    labels:sc15.map(e=>e[0]),
-    datasets:[{data:sc15.map(e=>met==='Ventas'?e[1].v:e[1].u),
-      backgroundColor:sc15.map((_,i)=>BRAND_COLORS[i%BRAND_COLORS.length]+'cc'),borderRadius:4}]
-  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},datalabels:{display:false}},
-    scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}},
-            y:{grid:{display:false},ticks:{color:tickColor,font:{size:10}}}}}});
+  const sc10=scSorted.slice(0,10);
+  const scPalette=sc10.map((_,i)=>BRAND_COLORS[i%BRAND_COLORS.length]+'dd');
+  makeChart('chartSubCat',{type:'doughnut',data:{
+    labels:sc10.map(e=>e[0]),
+    datasets:[{data:sc10.map(e=>met==='Ventas'?e[1].v:e[1].u),
+      backgroundColor:scPalette,borderWidth:2,borderColor:'var(--bg)'}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+    plugins:{legend:{display:true,position:'bottom',labels:{color:tickColor,font:{size:9},boxWidth:10,padding:8}},
+      datalabels:{display:false},
+      tooltip:{callbacks:{label:ctx=>met==='Ventas'?fmtMXN(ctx.raw):fmtNum(ctx.raw)+' u'}}}}});
   document.querySelector('#subCatTable tbody').innerHTML=scSorted.map((e,i)=>
     `<tr><td class="rank">#${i+1}</td><td>${e[0]}</td>
      <td class="num">${fmtMXN(e[1].v)}</td><td class="num">${fmtNum(e[1].u)}</td>
