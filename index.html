@@ -319,10 +319,28 @@ function buildPivotTable(){
   document.getElementById('pivotWrap').innerHTML=html;
 }
 
+function initYoyCatChips(){
+  const cats=[...new Set(RAW.byCategory.map(r=>r.Categoría))].sort();
+  const container=document.getElementById('yoyCatChips');if(!container)return;
+  const chipStyle=(active)=>`font-size:11px;padding:3px 12px;border-radius:20px;border:1px solid ${active?'var(--accent)':'var(--border)'};background:${active?'var(--accent)':'transparent'};color:${active?'white':'var(--muted)'};cursor:pointer;font-weight:600;transition:all .15s`;
+  container.innerHTML=`<button onclick="setYoyCat('all')" data-cat="all" style="${chipStyle(true)}">Todas</button>`
+    +cats.map(c=>`<button onclick="setYoyCat('${c}')" data-cat="${c}" style="${chipStyle(false)}">${c}</button>`).join('');
+}
+function setYoyCat(cat){
+  yoyCat=cat;
+  document.querySelectorAll('#yoyCatChips button').forEach(b=>{
+    const active=b.dataset.cat===cat;
+    b.style.background=active?'var(--accent)':'transparent';
+    b.style.color=active?'white':'var(--muted)';
+    b.style.borderColor=active?'var(--accent)':'var(--border)';
+  });
+  buildYoY();
+}
 function buildYoY(){
   const f=getFilters(),met=currentMetric;
   const baseY=parseInt(document.getElementById('yoyBase').value),compY=parseInt(document.getElementById('yoyComp').value);
   const maxW=compY===2026?MAX26:52,wTo=Math.min(f.weekTo,maxW);
+  const _ySrc=yoyCat!=='all'?RAW.byCategory.filter(r=>r.Categoría===yoyCat):RAW.byBrand;
   const _ybt=document.getElementById('yoyBrandTitle');if(_ybt)_ybt.textContent=baseY+' vs '+compY;
   const _ywt=document.getElementById('yoyWeekTitle');if(_ywt)_ywt.textContent=baseY+' vs '+compY;
   const _ycb=document.getElementById('yoyColBase');if(_ycb)_ycb.textContent=baseY;
@@ -330,8 +348,8 @@ function buildYoY(){
   const fB={...f,year:String(baseY),weekTo:Math.min(f.weekTo,52)},fC={...f,year:String(compY),weekTo:wTo};
   const wks=Array.from({length:wTo-f.weekFrom+1},(_,i)=>f.weekFrom+i);
   const bW={},cW={};
-  filterData(RAW.byBrand,fB).forEach(r=>{if(r.Semana<=wTo)bW[r.Semana]=(bW[r.Semana]||0)+r[met];});
-  filterData(RAW.byBrand,fC).forEach(r=>{cW[r.Semana]=(cW[r.Semana]||0)+r[met];});
+  filterData(_ySrc,fB).forEach(r=>{if(r.Semana<=wTo)bW[r.Semana]=(bW[r.Semana]||0)+r[met];});
+  filterData(_ySrc,fC).forEach(r=>{cW[r.Semana]=(cW[r.Semana]||0)+r[met];});
   makeChart('chartYoY',{type:'bar',data:{labels:wks.map(w=>'S'+w),datasets:[{label:String(baseY),data:wks.map(w=>bW[w]||0),backgroundColor:'rgba(59,130,246,0.55)',borderColor:'#3b82f6',borderWidth:1,borderRadius:3,datalabels:{display:false}},{label:compY===2026?'2026*':String(compY),data:wks.map(w=>cW[w]||0),backgroundColor:wks.map(w=>{const b=bW[w]||0,c=cW[w]||0;return b&&(c-b)/b>=0?'rgba(22,163,74,0.55)':'rgba(220,38,38,0.55)';}),borderColor:wks.map(w=>{const b=bW[w]||0,c=cW[w]||0;return b&&(c-b)/b>=0?'#16a34a':'#dc2626';}),borderWidth:1,borderRadius:3,datalabels:{display:true,formatter:(v,ctx)=>{const b=bW[wks[ctx.dataIndex]]||0;if(!b)return '';const p=(v-b)/b*100;return(p>=0?'+':'')+p.toFixed(1)+'%';},color:(ctx)=>{const b=bW[wks[ctx.dataIndex]]||0,v=ctx.dataset.data[ctx.dataIndex];return(!b||v>=b)?'#15803d':'#b91c1c';},font:{size:8,weight:'bold'},anchor:'end',align:'top',offset:2}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:30}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
   const bBr={},cBr={};
   filterData(RAW.byBrand,fB).forEach(r=>{if(r.Semana<=wTo)bBr[r.Marca]=(bBr[r.Marca]||0)+r[met];});
@@ -456,7 +474,7 @@ function buildAnalysis(){
 // Register datalabels plugin once at startup
 Chart.register(ChartDataLabels);
 Chart.defaults.set('plugins.datalabels', {display:false});
-document.addEventListener('DOMContentLoaded',()=>{syncFilterOptions();applyFilters();});
+document.addEventListener('DOMContentLoaded',()=>{syncFilterOptions();initYoyCatChips();applyFilters();});
 </script>
 </body>
 </html>
