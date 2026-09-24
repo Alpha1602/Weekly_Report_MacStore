@@ -107,6 +107,7 @@ tr:hover td{background:#f8faff;}
           <select id="yoyComp" onchange="buildYoY()" style="font-size:12px"><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option></select>
         </div>
       </div>
+      <div id="yoyCatChips" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px"></div>
       <canvas id="chartYoY" style="max-height:360px"></canvas>
     </div>
 
@@ -202,7 +203,7 @@ const BRANDS=RAW.brands,YEARS=RAW.years,MAX26=RAW.maxWeek2026;
 const fmtMXN=v=>'$'+Math.round(v).toLocaleString('es-MX');
 const fmtNum=v=>Math.round(v).toLocaleString('es-MX');
 const fmtK=v=>v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e3?'$'+(v/1e3).toFixed(1)+'K':'$'+Math.round(v);
-let currentMetric='Ventas',charts={};
+let currentMetric='Ventas',charts={},yoyCat='all';
 const gridColor='rgba(226,232,240,0.8)',tickColor='#64748b',baseFont={family:'Segoe UI,Arial,sans-serif',size:11};
 
 function getFilters(){return{year:document.getElementById('filterYear').value,brand:document.getElementById('filterBrand').value,weekFrom:parseInt(document.getElementById('filterWeekFrom').value)||1,weekTo:parseInt(document.getElementById('filterWeekTo').value)||52};}
