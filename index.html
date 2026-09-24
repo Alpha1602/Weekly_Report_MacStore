@@ -332,33 +332,31 @@ function buildPivotTable(){
   document.getElementById('pivotWrap').innerHTML=html;
 }
 
+function _chipStyle(active){return `font-size:11px;padding:3px 12px;border-radius:20px;border:1px solid ${active?'var(--accent)':'var(--border)'};background:${active?'var(--accent)':'transparent'};color:${active?'white':'var(--muted)'};cursor:pointer;font-weight:600;transition:all .15s`;}
+function _activateChips(containerId,val){document.querySelectorAll('#'+containerId+' button').forEach(b=>{const a=b.dataset.val===val;b.style.background=a?'var(--accent)':'transparent';b.style.color=a?'white':'var(--muted)';b.style.borderColor=a?'var(--accent)':'var(--border)';});}
 function initYoyCatChips(){
-  const cats=[...new Set(RAW.byCategory.map(r=>r.Categoría))].sort();
-  const container=document.getElementById('yoyCatChips');if(!container)return;
-  const chipStyle=(active)=>`font-size:11px;padding:3px 12px;border-radius:20px;border:1px solid ${active?'var(--accent)':'var(--border)'};background:${active?'var(--accent)':'transparent'};color:${active?'white':'var(--muted)'};cursor:pointer;font-weight:600;transition:all .15s`;
-  container.innerHTML=`<button onclick="setYoyCat('all')" data-cat="all" style="${chipStyle(true)}">Todas</button>`
-    +cats.map(c=>`<button onclick="setYoyCat('${c}')" data-cat="${c}" style="${chipStyle(false)}">${c}</button>`).join('');
+  const cs=[...new Set(RAW.byCategory.map(r=>r.Categoría))].sort();
+  const sc=[...new Set(RAW.bySubCat.map(r=>r.SubCat))].sort();
+  const br=[...new Set(RAW.byBrand.map(r=>r.Marca))].sort();
+  const mk=(id,items,fn,label)=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=`<button onclick="${fn}('all')" data-val="all" style="${_chipStyle(true)}">${label}</button>`+items.map(v=>`<button onclick="${fn}('${v.replace(/'/g,"\\'")}') " data-val="${v}" style="${_chipStyle(false)}">${v}</button>`).join('');};
+  mk('yoyCatChips',cs,'setYoyCat','Todas');
+  mk('yoySubCatChips',sc,'setYoySubCat','Todas');
+  mk('yoyBrandChips',br,'setYoyBrand','Todas');
 }
-function setYoyCat(cat){
-  yoyCat=cat;
-  document.querySelectorAll('#yoyCatChips button').forEach(b=>{
-    const active=b.dataset.cat===cat;
-    b.style.background=active?'var(--accent)':'transparent';
-    b.style.color=active?'white':'var(--muted)';
-    b.style.borderColor=active?'var(--accent)':'var(--border)';
-  });
-  buildYoY();
-}
+function setYoyCat(v){yoyCat=v;yoySubCat='all';yoyBrand='all';_activateChips('yoyCatChips',v);_activateChips('yoySubCatChips','all');_activateChips('yoyBrandChips','all');buildYoY();}
+function setYoySubCat(v){yoySubCat=v;yoyCat='all';yoyBrand='all';_activateChips('yoySubCatChips',v);_activateChips('yoyCatChips','all');_activateChips('yoyBrandChips','all');buildYoY();}
+function setYoyBrand(v){yoyBrand=v;yoyCat='all';yoySubCat='all';_activateChips('yoyBrandChips',v);_activateChips('yoyCatChips','all');_activateChips('yoySubCatChips','all');buildYoY();}
 function buildYoY(){
   const f=getFilters(),met=currentMetric;
   const baseY=parseInt(document.getElementById('yoyBase').value),compY=parseInt(document.getElementById('yoyComp').value);
   const maxW=compY===2026?MAX26:52,wTo=Math.min(f.weekTo,maxW);
-  const _ySrc=yoyCat!=='all'?RAW.byCategory.filter(r=>r.Categoría===yoyCat):RAW.byBrand;
+  const _ySrc=yoyCat!=='all'?RAW.byCategory.filter(r=>r.Categoría===yoyCat):yoySubCat!=='all'?RAW.bySubCat.filter(r=>r.SubCat===yoySubCat):RAW.byBrand;
   const _ybt=document.getElementById('yoyBrandTitle');if(_ybt)_ybt.textContent=baseY+' vs '+compY;
   const _ywt=document.getElementById('yoyWeekTitle');if(_ywt)_ywt.textContent=baseY+' vs '+compY;
   const _ycb=document.getElementById('yoyColBase');if(_ycb)_ycb.textContent=baseY;
   const _ycc=document.getElementById('yoyColComp');if(_ycc)_ycc.textContent=compY;
-  const fB={...f,year:String(baseY),weekTo:Math.min(f.weekTo,52)},fC={...f,year:String(compY),weekTo:wTo};
+  const _yBr=yoyBrand!=='all'?yoyBrand:f.brand;
+  const fB={...f,brand:_yBr,year:String(baseY),weekTo:Math.min(f.weekTo,52)},fC={...f,brand:_yBr,year:String(compY),weekTo:wTo};
   const wks=Array.from({length:wTo-f.weekFrom+1},(_,i)=>f.weekFrom+i);
   const bW={},cW={};
   filterData(_ySrc,fB).forEach(r=>{if(r.Semana<=wTo)bW[r.Semana]=(bW[r.Semana]||0)+r[met];});
