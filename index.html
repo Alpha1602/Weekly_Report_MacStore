@@ -380,7 +380,7 @@ function buildYoY(){
   if(document.getElementById('chartYoYWeek'))makeChart('chartYoYWeek',{type:'line',data:{labels:wks.map(w=>'S'+w),datasets:[{label:'Δ% vs '+baseY,data:dS,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.07)',fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:dS.map(v=>v===null?'#7c3aed':v>=0?'#16a34a':'#dc2626'),segment:{borderColor:ctx=>{const v=ctx.p1.parsed.y;return v>=0?'#16a34a':'#dc2626';}}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:15}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>v+'%'}}}}});
   let cB=0,cC=0;const cBa=[],cCa=[];
   wks.forEach(w=>{cB+=(bW[w]||0);cC+=(cW[w]||0);cBa.push(cB);cCa.push(cC);});
-  makeChart('chartYoYCumulative',{type:'line',data:{labels:wks.map(w=>'S'+w),datasets:[{label:String(baseY),data:cBa,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.07)',fill:true,tension:0.3,pointRadius:0},{label:compY===2026?'2026*':String(compY),data:cCa,borderColor:'#d97706',backgroundColor:'rgba(217,119,6,0.07)',fill:true,tension:0.3,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor,font:baseFont}},datalabels:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxTicksLimit:15}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
+  buildYoYCatChart();
 }
 
 function sortTable(id,col){
