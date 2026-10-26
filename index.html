@@ -383,6 +383,43 @@ function buildYoY(){
   buildYoYCatChart();
 }
 
+
+function initYoyCatChartChips(){
+  const subs=[...new Set((RAW.byCatSubCat||[]).map(r=>r.SubCat))].sort();
+  const el=document.getElementById('yoyCatChartChips');if(!el)return;
+  el.innerHTML=`<button onclick="setYoyCatChartSub('all')" data-val="all" style="${_chipStyle(true)}">Todas</button>`
+    +subs.map(s=>`<button onclick="setYoyCatChartSub('${s.replace(/'/g,"\'")}') " data-val="${s}" style="${_chipStyle(false)}">${s}</button>`).join('');
+}
+function setYoyCatChartSub(v){
+  yoyCatChartSub=v;
+  document.querySelectorAll('#yoyCatChartChips button').forEach(b=>{const a=b.dataset.val===v;b.style.background=a?'var(--accent)':'transparent';b.style.color=a?'white':'var(--muted)';b.style.borderColor=a?'var(--accent)':'var(--border)';});
+  buildYoYCatChart();
+}
+function buildYoYCatChart(){
+  const f=getFilters(),met=currentMetric;
+  const baseY=parseInt(document.getElementById('yoyBase').value),compY=parseInt(document.getElementById('yoyComp').value);
+  const maxW=compY===2026?MAX26:52,wTo=Math.min(f.weekTo,maxW);
+  const src=yoyCatChartSub!=='all'?(RAW.byCatSubCat||[]).filter(r=>r.SubCat===yoyCatChartSub):RAW.byCategory;
+  const bD={},cD={};
+  src.filter(r=>r.Año===baseY&&r.Semana>=f.weekFrom&&r.Semana<=Math.min(f.weekTo,52)).forEach(r=>{bD[r.Categoría]=(bD[r.Categoría]||0)+r[met];});
+  src.filter(r=>r.Año===compY&&r.Semana>=f.weekFrom&&r.Semana<=wTo).forEach(r=>{cD[r.Categoría]=(cD[r.Categoría]||0)+r[met];});
+  const cats=[...new Set([...Object.keys(bD),...Object.keys(cD)])].sort((a,b)=>(cD[b]||0)-(cD[a]||0));
+  if(document.getElementById('chartYoYCat'))makeChart('chartYoYCat',{type:'bar',data:{labels:cats,
+    datasets:[
+      {label:String(baseY),data:cats.map(c=>bD[c]||0),backgroundColor:'rgba(59,130,246,0.55)',borderColor:'#3b82f6',borderWidth:1,borderRadius:3,datalabels:{display:false}},
+      {label:compY===2026?'2026*':String(compY),data:cats.map(c=>cD[c]||0),
+        backgroundColor:cats.map(c=>{const b=bD[c]||0,cv=cD[c]||0;return(!b||(cv-b)/b>=0)?'rgba(22,163,74,0.55)':'rgba(220,38,38,0.55)';}),
+        borderColor:cats.map(c=>{const b=bD[c]||0,cv=cD[c]||0;return(!b||(cv-b)/b>=0)?'#16a34a':'#dc2626';}),
+        borderWidth:1,borderRadius:3,
+        datalabels:{display:true,formatter:(v,ctx)=>{const b=bD[cats[ctx.dataIndex]]||0;if(!b)return '';const p=(v-b)/b*100;return(p>=0?'+':'')+p.toFixed(1)+'%';},
+          color:(ctx)=>{const b=bD[cats[ctx.dataIndex]]||0,v=ctx.dataset.data[ctx.dataIndex];return(!b||v>=b)?'#15803d':'#b91c1c';},
+          font:{size:9,weight:'bold'},anchor:'end',align:'top',offset:2}}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:tickColor,font:baseFont}},datalabels:{display:false}},
+      scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9}}},
+              y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>met==='Ventas'?fmtK(v):fmtNum(v)}}}}});
+}
 function sortTable(id,col){
   const tbl=document.getElementById(id),tbody=tbl.querySelector('tbody'),rows=[...tbody.querySelectorAll('tr')];
   const dir=tbl.dataset.sortDir=='1'?-1:1;tbl.dataset.sortDir=dir;
@@ -493,7 +530,7 @@ function buildAnalysis(){
 // Register datalabels plugin once at startup
 Chart.register(ChartDataLabels);
 Chart.defaults.set('plugins.datalabels', {display:false});
-document.addEventListener('DOMContentLoaded',()=>{syncFilterOptions();initYoyCatChips();applyFilters();});
+document.addEventListener('DOMContentLoaded',()=>{syncFilterOptions();initYoyCatChips();initYoyCatChartChips();applyFilters();});
 </script>
 </body>
 </html>
