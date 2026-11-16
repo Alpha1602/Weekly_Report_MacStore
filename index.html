@@ -260,6 +260,17 @@ function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];
 function makeChart(id,config){destroyChart(id);const ctx=document.getElementById(id).getContext('2d');charts[id]=new Chart(ctx,config);return charts[id];}
 function chartOpts(isMoney){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>isMoney?fmtK(v):fmtNum(v)}}}};}
 
+
+function _activateWeekChip(id,val){document.querySelectorAll('#'+id+' button').forEach(b=>{const a=b.dataset.val===val;b.style.background=a?'var(--accent)':'transparent';b.style.color=a?'white':'var(--muted)';b.style.borderColor=a?'var(--accent)':'var(--border)';});}
+function initWeekChips(){
+  const mk=(id,items,fn)=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=`<button onclick="${fn}('all')" data-val="all" style="${_chipStyle(true)}">Todas</button>`+items.map(v=>`<button onclick="${fn}('${v.replace(/'/g,"\'")}') " data-val="${v}" style="${_chipStyle(false)}">${v}</button>`).join('');};
+  mk('weekRegionChips',[...new Set(RAW.byRegion.map(r=>r.Region))].sort(),'setWeekRegion');
+  mk('weekBrandChips',[...new Set(RAW.byBrand.map(r=>r.Marca))].sort(),'setWeekBrand');
+  mk('weekCatChips',[...new Set(RAW.byCategory.map(r=>r.Categoría))].sort(),'setWeekCat');
+}
+function setWeekRegion(v){weekRegion=v;weekBrand='all';weekCat='all';_activateWeekChip('weekRegionChips',v);_activateWeekChip('weekBrandChips','all');_activateWeekChip('weekCatChips','all');buildOverview();}
+function setWeekBrand(v){weekBrand=v;weekRegion='all';weekCat='all';_activateWeekChip('weekBrandChips',v);_activateWeekChip('weekRegionChips','all');_activateWeekChip('weekCatChips','all');buildOverview();}
+function setWeekCat(v){weekCat=v;weekRegion='all';weekBrand='all';_activateWeekChip('weekCatChips',v);_activateWeekChip('weekRegionChips','all');_activateWeekChip('weekBrandChips','all');buildOverview();}
 function buildOverview(){
   const f=getFilters(),met=currentMetric;
   const byYear={};filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{byYear[r.Año]=(byYear[r.Año]||0)+r[met];});
@@ -267,7 +278,9 @@ function buildOverview(){
   const yrColors=['#3b82f6','#6366f1','#16a34a','#f59e0b','#ef4444'];makeChart('chartYear',{type:'bar',data:{labels:yrL.map(y=>y==2026?y+'*':y),datasets:[{label:met,data:yrL.map(y=>byYear[y]),backgroundColor:yrL.map((y,i)=>yrColors[i%yrColors.length]),borderRadius:6}]},options:{...chartOpts(met==='Ventas'),plugins:{legend:{display:false},datalabels:{display:false}}}});
 
   const yw25={},yw26={};
-  filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{
+  const _wkSrc=weekRegion!=='all'?RAW.byRegion.filter(r=>r.Region===weekRegion):weekCat!=='all'?RAW.byCategory.filter(r=>r.Categoría===weekCat):RAW.byBrand;
+  const _wkF=weekBrand!=='all'?{...f,year:'all',brand:weekBrand}:{...f,year:'all'};
+  filterData(_wkSrc,_wkF).forEach(r=>{
     if(r.Año===2025){yw25[r.Semana]=(yw25[r.Semana]||0)+r[met];}
     else if(r.Año===2026){yw26[r.Semana]=(yw26[r.Semana]||0)+r[met];}
   });
