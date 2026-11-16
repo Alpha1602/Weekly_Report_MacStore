@@ -95,7 +95,24 @@ tr:hover td{background:#f8faff;}
 <div class="section active" id="section-overview">
   <div class="grid-2">
     <div class="card"><div class="card-title">Ventas por Año</div><canvas id="chartYear"></canvas></div>
-    <div class="card"><div class="card-title">Ventas por Semana <span>2025 vs 2026</span></div><canvas id="chartWeek"></canvas></div>
+    <div class="card">
+      <div class="card-title">Ventas por Semana <span>2025 vs 2026</span></div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin:8px 0 10px">
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <span style="font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;min-width:76px;padding-top:4px">Región</span>
+          <div id="weekRegionChips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <span style="font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;min-width:76px;padding-top:4px">Marca</span>
+          <div id="weekBrandChips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <span style="font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;min-width:76px;padding-top:4px">Categoría</span>
+          <div id="weekCatChips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+      <canvas id="chartWeek"></canvas>
+    </div>
   </div>
   <div style="border-top:2px solid var(--border);margin:8px 0 14px;padding-top:14px">
     <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:14px">📊 Comparativo YoY</div>
@@ -220,7 +237,7 @@ const BRANDS=RAW.brands,YEARS=RAW.years,MAX26=RAW.maxWeek2026;
 const fmtMXN=v=>'$'+Math.round(v).toLocaleString('es-MX');
 const fmtNum=v=>Math.round(v).toLocaleString('es-MX');
 const fmtK=v=>v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e3?'$'+(v/1e3).toFixed(1)+'K':'$'+Math.round(v);
-let currentMetric='Ventas',charts={},yoyCat='all',yoySubCat='all',yoyBrand='all',yoyCatChartSub='all';
+let currentMetric='Ventas',charts={},yoyCat='all',yoySubCat='all',yoyBrand='all',yoyCatChartSub='all',weekRegion='all',weekBrand='all',weekCat='all';
 const gridColor='rgba(226,232,240,0.8)',tickColor='#64748b',baseFont={family:'Segoe UI,Arial,sans-serif',size:11};
 
 function getFilters(){return{year:document.getElementById('filterYear').value,brand:document.getElementById('filterBrand').value,weekFrom:parseInt(document.getElementById('filterWeekFrom').value)||1,weekTo:parseInt(document.getElementById('filterWeekTo').value)||52};}
