@@ -237,7 +237,7 @@ const BRANDS=RAW.brands,YEARS=RAW.years,MAX26=RAW.maxWeek2026;
 const fmtMXN=v=>'$'+Math.round(v).toLocaleString('es-MX');
 const fmtNum=v=>Math.round(v).toLocaleString('es-MX');
 const fmtK=v=>v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e3?'$'+(v/1e3).toFixed(1)+'K':'$'+Math.round(v);
-let currentMetric='Ventas',charts={},yoyCat='all',yoySubCat='all',yoyBrand='all',yoyCatChartSub='all',weekRegion='all',weekBrand='all',weekCat='all';
+let currentMetric='Ventas',charts={},yoyCat=[],yoySubCat=[],yoyBrand=[],yoyCatChartSub='all',weekRegion='all',weekBrand='all',weekCat='all';
 const gridColor='rgba(226,232,240,0.8)',tickColor='#64748b',baseFont={family:'Segoe UI,Arial,sans-serif',size:11};
 
 function getFilters(){return{year:document.getElementById('filterYear').value,brand:document.getElementById('filterBrand').value,weekFrom:parseInt(document.getElementById('filterWeekFrom').value)||1,weekTo:parseInt(document.getElementById('filterWeekTo').value)||52};}
@@ -381,19 +381,19 @@ function renderYoyChips(){
   rnd('yoySubCatChips',showSubs,'setYoySubCat',yoySubCat,'Todas');
   rnd('yoyBrandChips',showBrs,'setYoyBrand',yoyBrand,'Todas');
 }
-function setYoyCat(v){yoyCat=v;yoySubCat='all';yoyBrand='all';renderYoyChips();buildYoY();}
-function setYoySubCat(v){yoySubCat=v;yoyCat='all';yoyBrand='all';renderYoyChips();buildYoY();}
-function setYoyBrand(v){yoyBrand=v;yoyCat='all';yoySubCat='all';renderYoyChips();buildYoY();}
+function setYoyCat(v){if(v==='all'){yoyCat=[];}else{yoySubCat=[];yoyBrand=[];const i=yoyCat.indexOf(v);if(i>=0)yoyCat.splice(i,1);else yoyCat.push(v);}renderYoyChips();buildYoY();}
+function setYoySubCat(v){if(v==='all'){yoySubCat=[];}else{yoyCat=[];yoyBrand=[];const i=yoySubCat.indexOf(v);if(i>=0)yoySubCat.splice(i,1);else yoySubCat.push(v);}renderYoyChips();buildYoY();}
+function setYoyBrand(v){if(v==='all'){yoyBrand=[];}else{yoyCat=[];yoySubCat=[];const i=yoyBrand.indexOf(v);if(i>=0)yoyBrand.splice(i,1);else yoyBrand.push(v);}renderYoyChips();buildYoY();}
 function buildYoY(){
   const f=getFilters(),met=currentMetric;
   const baseY=parseInt(document.getElementById('yoyBase').value),compY=parseInt(document.getElementById('yoyComp').value);
   const maxW=compY===2026?MAX26:52,wTo=Math.min(f.weekTo,maxW);
-  const _ySrc=yoyCat!=='all'?RAW.byCategory.filter(r=>r.Categoría===yoyCat):yoySubCat!=='all'?RAW.bySubCat.filter(r=>r.SubCat===yoySubCat):RAW.byBrand;
+  const _ySrc=yoyCat.length>0?RAW.byCategory.filter(r=>yoyCat.includes(r.Categoría)):yoySubCat.length>0?RAW.bySubCat.filter(r=>yoySubCat.includes(r.SubCat)):yoyBrand.length>0?RAW.byBrand.filter(r=>yoyBrand.includes(r.Marca)):RAW.byBrand;
   const _ybt=document.getElementById('yoyBrandTitle');if(_ybt)_ybt.textContent=baseY+' vs '+compY;
   const _ywt=document.getElementById('yoyWeekTitle');if(_ywt)_ywt.textContent=baseY+' vs '+compY;
   const _ycb=document.getElementById('yoyColBase');if(_ycb)_ycb.textContent=baseY;
   const _ycc=document.getElementById('yoyColComp');if(_ycc)_ycc.textContent=compY;
-  const _yBr=yoyBrand!=='all'?yoyBrand:f.brand;
+  const _yBr=yoyBrand.length>0?'all':f.brand;
   const fB={...f,brand:_yBr,year:String(baseY),weekTo:Math.min(f.weekTo,52)},fC={...f,brand:_yBr,year:String(compY),weekTo:wTo};
   const wks=Array.from({length:wTo-f.weekFrom+1},(_,i)=>f.weekFrom+i);
   const bW={},cW={};
