@@ -97,19 +97,6 @@ tr:hover td{background:#f8faff;}
     <div class="card"><div class="card-title">Ventas por Año</div><canvas id="chartYear"></canvas></div>
     <div class="card">
       <div class="card-title">Ventas por Semana <span>2025 vs 2026</span></div>
-      <div style="display:flex;flex-direction:column;gap:5px;margin:8px 0 10px">
-        <div style="display:flex;align-items:flex-start;gap:8px">
-          <span style="font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;min-width:76px;padding-top:4px">Región</span>
-          <div id="weekRegionChips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:8px">
-          <span style="font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;min-width:76px;padding-top:4px">Marca</span>
-          <div id="weekBrandChips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:8px">
-          <span style="font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;min-width:76px;padding-top:4px">Categoría</span>
-          <div id="weekCatChips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
-        </div>
       </div>
       <canvas id="chartWeek"></canvas>
     </div>
@@ -125,6 +112,10 @@ tr:hover td{background:#f8faff;}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0 12px">
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <span style="font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;min-width:76px;padding-top:4px">Región</span>
+          <div id="yoyRegionChips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        </div>
         <div style="display:flex;align-items:flex-start;gap:8px">
           <span style="font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;min-width:76px;padding-top:4px">Categoría</span>
           <div id="yoyCatChips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
@@ -237,7 +228,7 @@ const BRANDS=RAW.brands,YEARS=RAW.years,MAX26=RAW.maxWeek2026;
 const fmtMXN=v=>'$'+Math.round(v).toLocaleString('es-MX');
 const fmtNum=v=>Math.round(v).toLocaleString('es-MX');
 const fmtK=v=>v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e3?'$'+(v/1e3).toFixed(1)+'K':'$'+Math.round(v);
-let currentMetric='Ventas',charts={},yoyCat=[],yoySubCat=[],yoyBrand=[],yoyCatChartSub='all',weekRegion='all',weekBrand='all',weekCat='all';
+let currentMetric='Ventas',charts={},yoyCat=[],yoySubCat=[],yoyBrand=[],yoyRegion=[],yoyCatChartSub='all';
 const gridColor='rgba(226,232,240,0.8)',tickColor='#64748b',baseFont={family:'Segoe UI,Arial,sans-serif',size:11};
 
 function getFilters(){return{year:document.getElementById('filterYear').value,brand:document.getElementById('filterBrand').value,weekFrom:parseInt(document.getElementById('filterWeekFrom').value)||1,weekTo:parseInt(document.getElementById('filterWeekTo').value)||52};}
@@ -261,16 +252,6 @@ function makeChart(id,config){destroyChart(id);const ctx=document.getElementById
 function chartOpts(isMoney){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:baseFont,callback:v=>isMoney?fmtK(v):fmtNum(v)}}}};}
 
 
-function _activateWeekChip(id,val){document.querySelectorAll('#'+id+' button').forEach(b=>{const a=b.dataset.val===val;b.style.background=a?'var(--accent)':'transparent';b.style.color=a?'white':'var(--muted)';b.style.borderColor=a?'var(--accent)':'var(--border)';});}
-function initWeekChips(){
-  const mk=(id,items,fn)=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=`<button onclick="${fn}('all')" data-val="all" style="${_chipStyle(true)}">Todas</button>`+items.map(v=>`<button onclick="${fn}('${v.replace(/'/g,"\'")}') " data-val="${v}" style="${_chipStyle(false)}">${v}</button>`).join('');};
-  mk('weekRegionChips',[...new Set(RAW.byRegion.map(r=>r.Region))].sort(),'setWeekRegion');
-  mk('weekBrandChips',[...new Set(RAW.byBrand.map(r=>r.Marca))].sort(),'setWeekBrand');
-  mk('weekCatChips',[...new Set(RAW.byCategory.map(r=>r.Categoría))].sort(),'setWeekCat');
-}
-function setWeekRegion(v){weekRegion=v;weekBrand='all';weekCat='all';_activateWeekChip('weekRegionChips',v);_activateWeekChip('weekBrandChips','all');_activateWeekChip('weekCatChips','all');buildOverview();}
-function setWeekBrand(v){weekBrand=v;weekRegion='all';weekCat='all';_activateWeekChip('weekBrandChips',v);_activateWeekChip('weekRegionChips','all');_activateWeekChip('weekCatChips','all');buildOverview();}
-function setWeekCat(v){weekCat=v;weekRegion='all';weekBrand='all';_activateWeekChip('weekCatChips',v);_activateWeekChip('weekRegionChips','all');_activateWeekChip('weekBrandChips','all');buildOverview();}
 function buildOverview(){
   const f=getFilters(),met=currentMetric;
   const byYear={};filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{byYear[r.Año]=(byYear[r.Año]||0)+r[met];});
@@ -278,9 +259,7 @@ function buildOverview(){
   const yrColors=['#3b82f6','#6366f1','#16a34a','#f59e0b','#ef4444'];makeChart('chartYear',{type:'bar',data:{labels:yrL.map(y=>y==2026?y+'*':y),datasets:[{label:met,data:yrL.map(y=>byYear[y]),backgroundColor:yrL.map((y,i)=>yrColors[i%yrColors.length]),borderRadius:6}]},options:{...chartOpts(met==='Ventas'),plugins:{legend:{display:false},datalabels:{display:false}}}});
 
   const yw25={},yw26={};
-  const _wkSrc=weekRegion!=='all'?RAW.byRegion.filter(r=>r.Region===weekRegion):weekCat!=='all'?RAW.byCategory.filter(r=>r.Categoría===weekCat):RAW.byBrand;
-  const _wkF=weekBrand!=='all'?{...f,year:'all',brand:weekBrand}:{...f,year:'all'};
-  filterData(_wkSrc,_wkF).forEach(r=>{
+  filterData(RAW.byBrand,{...f,year:'all'}).forEach(r=>{
     if(r.Año===2025){yw25[r.Semana]=(yw25[r.Semana]||0)+r[met];}
     else if(r.Año===2026){yw26[r.Semana]=(yw26[r.Semana]||0)+r[met];}
   });
@@ -370,25 +349,28 @@ function _chipStyle(active){return `font-size:11px;padding:3px 12px;border-radiu
 function initYoyCatChips(){renderYoyChips();}
 function renderYoyChips(){
   const combos=RAW.combos||[];
+  const allRegions=[...new Set((RAW.byRegion||[]).map(r=>r.Region))].sort();
   let showCats=[...new Set(combos.map(c=>c.Categoría))].sort();
   let showSubs=[...new Set(combos.map(c=>c.SubCat))].sort();
   let showBrs=[...new Set(combos.map(c=>c.Marca))].sort();
-  if(yoyCat!=='all'){const f=combos.filter(c=>c.Categoría===yoyCat);showSubs=[...new Set(f.map(c=>c.SubCat))].sort();showBrs=[...new Set(f.map(c=>c.Marca))].sort();}
-  else if(yoySubCat!=='all'){const f=combos.filter(c=>c.SubCat===yoySubCat);showCats=[...new Set(f.map(c=>c.Categoría))].sort();showBrs=[...new Set(f.map(c=>c.Marca))].sort();}
-  else if(yoyBrand!=='all'){const f=combos.filter(c=>c.Marca===yoyBrand);showCats=[...new Set(f.map(c=>c.Categoría))].sort();showSubs=[...new Set(f.map(c=>c.SubCat))].sort();}
-  const rnd=(id,items,fn,active,lbl)=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=`<button onclick="${fn}('all')" data-val="all" style="${_chipStyle(active==='all')}">${lbl}</button>`+items.map(v=>`<button onclick="${fn}('${v.replace(/'/g,"\\'")}')" data-val="${v}" style="${_chipStyle(active===v)}">${v}</button>`).join('');};
+  if(yoyCat.length>0){const f=combos.filter(c=>yoyCat.includes(c.Categoría));showSubs=[...new Set(f.map(c=>c.SubCat))].sort();showBrs=[...new Set(f.map(c=>c.Marca))].sort();}
+  else if(yoySubCat.length>0){const f=combos.filter(c=>yoySubCat.includes(c.SubCat));showCats=[...new Set(f.map(c=>c.Categoría))].sort();showBrs=[...new Set(f.map(c=>c.Marca))].sort();}
+  else if(yoyBrand.length>0){const f=combos.filter(c=>yoyBrand.includes(c.Marca));showCats=[...new Set(f.map(c=>c.Categoría))].sort();showSubs=[...new Set(f.map(c=>c.SubCat))].sort();}
+  const rnd=(id,items,fn,arr,lbl)=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=`<button onclick="${fn}('all')" data-val="all" style="${_chipStyle(arr.length===0)}">${lbl}</button>`+items.map(v=>`<button onclick="${fn}('${v.replace(/'/g,"\\'")}') " data-val="${v}" style="${_chipStyle(arr.includes(v))}">${v}</button>`).join('');};
+  rnd('yoyRegionChips',allRegions,'setYoyRegion',yoyRegion,'Todas');
   rnd('yoyCatChips',showCats,'setYoyCat',yoyCat,'Todas');
   rnd('yoySubCatChips',showSubs,'setYoySubCat',yoySubCat,'Todas');
   rnd('yoyBrandChips',showBrs,'setYoyBrand',yoyBrand,'Todas');
 }
-function setYoyCat(v){if(v==='all'){yoyCat=[];}else{yoySubCat=[];yoyBrand=[];const i=yoyCat.indexOf(v);if(i>=0)yoyCat.splice(i,1);else yoyCat.push(v);}renderYoyChips();buildYoY();}
-function setYoySubCat(v){if(v==='all'){yoySubCat=[];}else{yoyCat=[];yoyBrand=[];const i=yoySubCat.indexOf(v);if(i>=0)yoySubCat.splice(i,1);else yoySubCat.push(v);}renderYoyChips();buildYoY();}
-function setYoyBrand(v){if(v==='all'){yoyBrand=[];}else{yoyCat=[];yoySubCat=[];const i=yoyBrand.indexOf(v);if(i>=0)yoyBrand.splice(i,1);else yoyBrand.push(v);}renderYoyChips();buildYoY();}
+function setYoyRegion(v){if(v==='all'){yoyRegion=[];}else{yoyCat=[];yoySubCat=[];yoyBrand=[];const i=yoyRegion.indexOf(v);if(i>=0)yoyRegion.splice(i,1);else yoyRegion.push(v);}renderYoyChips();buildYoY();}
+function setYoyCat(v){if(v==='all'){yoyCat=[];}else{yoySubCat=[];yoyBrand=[];yoyRegion=[];const i=yoyCat.indexOf(v);if(i>=0)yoyCat.splice(i,1);else yoyCat.push(v);}renderYoyChips();buildYoY();}
+function setYoySubCat(v){if(v==='all'){yoySubCat=[];}else{yoyCat=[];yoyBrand=[];yoyRegion=[];const i=yoySubCat.indexOf(v);if(i>=0)yoySubCat.splice(i,1);else yoySubCat.push(v);}renderYoyChips();buildYoY();}
+function setYoyBrand(v){if(v==='all'){yoyBrand=[];}else{yoyCat=[];yoySubCat=[];yoyRegion=[];const i=yoyBrand.indexOf(v);if(i>=0)yoyBrand.splice(i,1);else yoyBrand.push(v);}renderYoyChips();buildYoY();}
 function buildYoY(){
   const f=getFilters(),met=currentMetric;
   const baseY=parseInt(document.getElementById('yoyBase').value),compY=parseInt(document.getElementById('yoyComp').value);
   const maxW=compY===2026?MAX26:52,wTo=Math.min(f.weekTo,maxW);
-  const _ySrc=yoyCat.length>0?RAW.byCategory.filter(r=>yoyCat.includes(r.Categoría)):yoySubCat.length>0?RAW.bySubCat.filter(r=>yoySubCat.includes(r.SubCat)):yoyBrand.length>0?RAW.byBrand.filter(r=>yoyBrand.includes(r.Marca)):RAW.byBrand;
+  const _ySrc=yoyCat.length>0?RAW.byCategory.filter(r=>yoyCat.includes(r.Categoría)):yoySubCat.length>0?RAW.bySubCat.filter(r=>yoySubCat.includes(r.SubCat)):yoyRegion.length>0?RAW.byRegion.filter(r=>yoyRegion.includes(r.Region)):yoyBrand.length>0?RAW.byBrand.filter(r=>yoyBrand.includes(r.Marca)):RAW.byBrand;
   const _ybt=document.getElementById('yoyBrandTitle');if(_ybt)_ybt.textContent=baseY+' vs '+compY;
   const _ywt=document.getElementById('yoyWeekTitle');if(_ywt)_ywt.textContent=baseY+' vs '+compY;
   const _ycb=document.getElementById('yoyColBase');if(_ycb)_ycb.textContent=baseY;
@@ -560,7 +542,7 @@ function buildAnalysis(){
 // Register datalabels plugin once at startup
 Chart.register(ChartDataLabels);
 Chart.defaults.set('plugins.datalabels', {display:false});
-document.addEventListener('DOMContentLoaded',()=>{syncFilterOptions();initWeekChips();initYoyCatChips();initYoyCatChartChips();applyFilters();});
+document.addEventListener('DOMContentLoaded',()=>{syncFilterOptions();initYoyCatChips();initYoyCatChartChips();applyFilters();});
 </script>
 </body>
 </html>
