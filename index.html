@@ -236,7 +236,7 @@ function filterData(arr,f){return arr.filter(r=>{if(f.year!=='all'&&r.Año!=f.ye
 function resetFilters(){document.getElementById('filterYear').value='all';document.getElementById('filterBrand').value='all';document.getElementById('filterWeekFrom').value=1;document.getElementById('filterWeekTo').value=52;applyFilters();}
 function setMetric(m){currentMetric=m;document.getElementById('btnVentas').classList.toggle('active',m==='Ventas');document.getElementById('btnUnidades').classList.toggle('active',m==='Unidades');applyFilters();}
 function applyFilters(){buildKPIs();buildOverview();buildBrands();buildPivotTable();buildHeatmap();buildYoY();buildAnalysis();}
-function switchTab(id){const tabs=['overview','brands','pivot','analysis'];document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===id));document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('section-'+id).classList.add('active');}
+function switchTab(id){const tabs=['overview','brands','pivot','analysis'];document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===id));document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('section-'+id).classList.add('active');if(id==='pivot')buildPivotTable();else if(id==='analysis')buildAnalysis();}
 
 function buildKPIs(){
   const f=getFilters(),bw=filterData(RAW.byBrand,f);
